@@ -2,7 +2,7 @@
 
 ### A small lightweight desktop application for keeping track of study/ focus time
 
-[Image](https://imgur.com/8nPDKIu)
+![Image](https://i.imgur.com/mZm0Aot.jpg)
 
 - 🟢 Start / Stop focus timer (like a stopwatch)
 - 📆 Start Day / End Day resets
