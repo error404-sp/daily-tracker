@@ -5,18 +5,21 @@ from settings import Settings
 from state import StateManager
 from datetime import datetime
 from util import Time
+import csv
+import time
 
 class DailyTracker(Gtk.Window):
     def __init__(self):
         self.settings = Settings()
         self.state = StateManager()
         super().__init__(title=f"{self.settings.username}'s Daily Tracker")
-
+        self.csv_file = f"{self.settings.username.lower()}_focus_sessions.csv"
         self.set_default_size(400, 200)
 
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10, margin=15)
         self.timer_label = Gtk.Label()
         self.session_label = Gtk.Label()
+        self.start_time = 0
         self.update_time_labels(self.state.focus_seconds)
         self.session_label.set_text(f"Total sessions: {self.state.session_count}")
         vbox.pack_start(self.timer_label, False, False, 10)
@@ -75,24 +78,28 @@ class DailyTracker(Gtk.Window):
 
     def on_session_active(self, switch, gparam):
         if switch.get_active():
+            self.start_time = datetime.now()
             if not self.state.is_focus_time:
                 self.state.reset()
                 self.update_time_labels(self.state.focus_seconds)
                 self.switch1.set_active(self.state.is_focus_time)
-                
+                self.log_day_start(self.start_time) 
             self.state.start_session()
         else:
             self.state.end_session()
             self.session_label.set_text(f"Total sessions: {self.state.session_count}")
+            self.log_session(self.start_time, datetime.now(), self.state.session_seconds)
             
                 
     def on_focus_activate(self, switch, gparam):
         if switch.get_active():
             self.state.reset()
             self.update_time_labels(self.state.focus_seconds)
+            self.log_day_start(datetime.now()) 
         else:
             self.state.stop_tracking()
             self.switch.set_active(self.state.timer_running)
+            self.log_day_end(datetime.now())
         self.session_label.set_text(f"Total sessions: {self.state.session_count}")
                            
     
@@ -111,7 +118,34 @@ class DailyTracker(Gtk.Window):
 
         return True  # Keep the timer going
 
+    def log_session(self,start, end, duration_seconds):
+        with open(self.csv_file, "a", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            if csvfile.tell() == 0:
+                writer.writerow(["S.No","Duration (HH:MM:SS)","Start Time" "End Time"])
+            dur_str = time.strftime("%H:%M:%S", time.gmtime(duration_seconds))
+            writer.writerow([
+                self.state.session_count,
+                dur_str,
+                start.strftime("%H:%M:%S"),
+                end.strftime("%H:%M:%S"),
+            ])
 
+    def log_day_start(self, timestamp):
+        with open(self.csv_file, "a", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow([])
+            writer.writerow(["---- ","Clocked in at : ",f"{timestamp.strftime('%Y-%m-%d %H:%M:%S')}"," ----"])
+            writer.writerow([])
+
+    def log_day_end(self, timestamp):
+        with open(self.csv_file, "a", newline="") as csvfile:
+            def_time = Time(self.state.focus_seconds)
+            writer = csv.writer(csvfile)
+            writer.writerow([])
+            writer.writerow(["----"," Clocked out at : ", f"{timestamp.strftime('%Y-%m-%d %H:%M:%S')}"," ----"])
+            writer.writerow(["---- Focus Time :",f" {def_time.hrs:02}:{def_time.mins:02}:{def_time.seconds:02}" ,"Sessions: ", f"{self.state.session_count} ----"])
+            writer.writerow([])
 
 win = DailyTracker()
 win.connect("destroy", Gtk.main_quit)
