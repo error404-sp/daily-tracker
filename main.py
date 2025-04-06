@@ -7,6 +7,7 @@ from datetime import datetime
 from util import Time
 import csv
 import time
+import os
 
 class DailyTracker(Gtk.Window):
     def __init__(self):
@@ -56,7 +57,7 @@ class DailyTracker(Gtk.Window):
         
         hbox1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         # Start label
-        day_label = Gtk.Label(label="Clock in ")
+        day_label = Gtk.Label(label="Clock in / out ")
         hbox1.pack_start(day_label, False, False, 0)
 
         # Switch
@@ -148,6 +149,9 @@ class DailyTracker(Gtk.Window):
             writer.writerow([])
 
 win = DailyTracker()
+icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
+if os.path.exists(icon_path):
+    win.set_icon_from_file(icon_path)
 win.connect("destroy", Gtk.main_quit)
 win.show_all()
 Gtk.main()
