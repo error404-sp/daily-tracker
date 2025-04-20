@@ -26,7 +26,7 @@ class DailyTracker(Gtk.Window):
         vbox.pack_start(self.timer_label, False, False, 10)
         vbox.pack_start(self.session_label, False, False, 0)
 
-        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin=20)
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin=10)
         hbox.set_halign(Gtk.Align.CENTER)  # Center the whole group
         hbox.set_valign(Gtk.Align.CENTER)
 
@@ -57,6 +57,11 @@ class DailyTracker(Gtk.Window):
         hbox.pack_start(description_btn, False, False, 0)
 
         vbox.pack_start(hbox, False, False, 0)
+        if(len(self.state.last_session)):
+            self.prev_date_label = Gtk.Label()
+            self.prev_date_label.set_markup(f"<span size='8000'><b>Last session on:</b> {self.state.last_session}</span>")
+            self.prev_date_label.set_xalign(1.0)
+            vbox.pack_start(self.prev_date_label, False, False, 0)
 
         action_bar = Gtk.ActionBar()
         self.time_label = Gtk.Label(margin=10)
@@ -96,7 +101,8 @@ class DailyTracker(Gtk.Window):
                 self.log_day_start(self.start_time) 
             self.state.start_session()
         else:
-            self.state.end_session()
+            date = datetime.now().strftime("%d %b %Y")
+            self.state.end_session(date)
             self.session_label.set_text(f"Total sessions: {self.state.session_count}")
             self.log_session(self.start_time, datetime.now(), self.state.session_seconds)
             
