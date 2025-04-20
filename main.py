@@ -1,6 +1,6 @@
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, GLib, GdkPixbuf
 from settings import Settings
 from state import StateManager
 from datetime import datetime
@@ -46,6 +46,15 @@ class DailyTracker(Gtk.Window):
         # End label
         start_label = Gtk.Label(label="Start")
         hbox.pack_start(start_label, False, False, 0)
+
+        # popup description
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size("add-note.svg", 16, 16)  # width, height in px
+        image = Gtk.Image.new_from_pixbuf(pixbuf)
+        description_btn = Gtk.Button()
+        description_btn.set_image(image)
+        description_btn.set_always_show_image(True)
+        description_btn.connect("clicked",self.on_popup)
+        hbox.pack_start(description_btn, False, False, 0)
 
         vbox.pack_start(hbox, False, False, 0)
 
@@ -123,13 +132,14 @@ class DailyTracker(Gtk.Window):
         with open(self.csv_file, "a", newline="") as csvfile:
             writer = csv.writer(csvfile)
             if csvfile.tell() == 0:
-                writer.writerow(["S.No","Duration (HH:MM:SS)","Start Time" "End Time"])
+                writer.writerow(["S.No","Duration (HH:MM:SS)","Start Time" "End Time", "Description"])
             dur_str = time.strftime("%H:%M:%S", time.gmtime(duration_seconds))
             writer.writerow([
                 self.state.session_count,
                 dur_str,
                 start.strftime("%H:%M:%S"),
                 end.strftime("%H:%M:%S"),
+                self.state.session_description
             ])
 
     def log_day_start(self, timestamp):
@@ -147,6 +157,31 @@ class DailyTracker(Gtk.Window):
             writer.writerow(["----"," Clocked out at : ", f"{timestamp.strftime('%Y-%m-%d %H:%M:%S')}"," ----"])
             writer.writerow(["---- Focus Time :",f" {def_time.hrs:02}:{def_time.mins:02}:{def_time.seconds:02}" ,"Sessions: ", f"{self.state.session_count} ----"])
             writer.writerow([])
+    
+    def on_popup(self,widget):
+        dialog = Gtk.Dialog(
+            title="Session description",
+            transient_for=self,
+            flags=0,
+        )
+        dialog.set_default_size(350, 50)
+        dialog.add_button(
+            Gtk.STOCK_ADD, Gtk.ResponseType.ACCEPT,
+        )
+
+        entry = Gtk.Entry()
+        entry.set_placeholder_text("Add session description")
+        box = dialog.get_content_area()
+        box.set_border_width(20)
+        box.add(entry)
+        dialog.show_all()
+
+        response = dialog.run()
+
+        if response == Gtk.ResponseType.ACCEPT:
+            self.state.update_description(entry.get_text())
+
+        dialog.destroy()
 
 win = DailyTracker()
 icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
