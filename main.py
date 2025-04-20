@@ -104,7 +104,7 @@ class DailyTracker(Gtk.Window):
             date = datetime.now().strftime("%d %b %Y")
             self.state.end_session(date)
             self.session_label.set_text(f"Total sessions: {self.state.session_count}")
-             self.prev_date_label.set_markup(f"<span size='8000'><b>Last session on:</b> {self.state.last_session}</span>")
+            self.prev_date_label.set_markup(f"<span size='8000'><b>Last session on:</b> {self.state.last_session}</span>")
             self.log_session(self.start_time, datetime.now(), self.state.session_seconds)
             
                 
