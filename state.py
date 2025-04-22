@@ -46,6 +46,7 @@ class StateManager:
     def start_session(self):
         self.timer_running = True
         self.session_seconds = 0
+        self.session_description = ""
 
     def update_focus_time(self):
         self.focus_seconds += 1
