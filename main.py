@@ -1,6 +1,7 @@
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, GdkPixbuf
+gi.require_version('Notify', '0.7')
+from gi.repository import Gtk, GLib, GdkPixbuf, Notify
 from settings import Settings
 from state import StateManager
 from datetime import datetime
@@ -9,15 +10,44 @@ import csv
 import time
 import os
 
+Notify.init("DailyTracker")
+
 class DailyTracker(Gtk.Window):
     def __init__(self):
         self.settings = Settings()
         self.state = StateManager()
         super().__init__(title=f"{self.settings.username}'s Daily Tracker")
         self.csv_file = f"{self.settings.username.lower()}_focus_sessions.csv"
-        self.set_default_size(400, 200)
+        self.set_default_size(400, 170)
 
-        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10, margin=15)
+        # Create main vertical layout
+        layoutbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        layoutbox.set_size_request(400, -1)
+        self.add(layoutbox)
+
+        switcher_wrapper = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        switcher_wrapper.set_size_request(400, -1)  # 👈 Set width here
+        layoutbox.pack_start(switcher_wrapper, False, False, 0)
+
+        # Create StackSwitcher (tab-like control)
+        switcher = Gtk.StackSwitcher()
+        # layoutbox.pack_start(switcher, False, False, 0)
+
+        # Create Stack (holds page content)
+        stack = Gtk.Stack()
+        stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+        stack.set_transition_duration(300)
+        switcher.set_stack(stack)
+        layoutbox.pack_start(stack, True, True, 0)
+        switcher.set_halign(Gtk.Align.FILL)
+        stack.set_halign(Gtk.Align.FILL)
+        switcher.set_hexpand(True)
+        stack.set_hexpand(True)
+        switcher_wrapper.pack_start(switcher, True, True, 0)  # 👈 Allow filling wrapper
+
+        
+        # Tracker
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10, margin=10)
         self.timer_label = Gtk.Label()
         self.session_label = Gtk.Label()
         self.start_time = 0
@@ -86,7 +116,19 @@ class DailyTracker(Gtk.Window):
         action_bar.pack_end(hbox1)
         vbox.pack_end(action_bar, False, False, 0)
         
-        self.add(vbox)
+        stack.add_titled(vbox, "tracker", "Tracker")
+
+        settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        settings_box.set_border_width(10)
+        settings_label = Gtk.Label(label="This is the Settings page.")
+        settings_box.pack_start(settings_label, False, False, 0)
+        stack.add_titled(settings_box, "settings", "Settings")
+
+        # notification = Notify.Notification.new(
+        #     "Hey there!", "This is your GTK3 notification", "dialog-information"
+        # )
+        # notification.set_timeout(3000)
+        # notification.show()
 
         GLib.timeout_add_seconds(1, self.update_time)
 
