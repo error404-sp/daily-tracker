@@ -10,8 +10,6 @@ import csv
 import time
 import os
 
-Notify.init("DailyTracker")
-
 class DailyTracker(Gtk.Window):
     def __init__(self):
         self.settings = Settings()
@@ -119,10 +117,9 @@ class DailyTracker(Gtk.Window):
         stack.add_titled(vbox, "tracker", "Tracker")
 
         settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        settings_box.set_border_width(10)
-        settings_label = Gtk.Label(label="This is the Settings page.")
-        settings_box.pack_start(settings_label, False, False, 0)
         stack.add_titled(settings_box, "settings", "Settings")
+        self.get_settings_tab(settings_box)
+
 
         # notification = Notify.Notification.new(
         #     "Hey there!", "This is your GTK3 notification", "dialog-information"
@@ -231,6 +228,65 @@ class DailyTracker(Gtk.Window):
             self.state.update_description(entry.get_text())
 
         dialog.destroy()
+
+    def get_settings_tab(self, settings_box):
+        settings_box.set_border_width(10)
+        section_label = Gtk.Label()
+        section_label.set_markup('<b>Notifications</b>')
+        section_label.set_xalign(0.1)
+        settings_box.pack_start(section_label, False, False, 0)
+        
+        notif_checkbox = Gtk.CheckButton(label="Enable notifications")
+        notif_checkbox.set_margin_start(15)
+        notif_checkbox.set_active(False)  # Default state
+        notif_checkbox.connect("toggled", self.on_notif)
+        settings_box.pack_start(notif_checkbox, False, False, 0)
+
+        low_timebox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        low_timebox.set_margin_start(15)
+        low_time_label  = Gtk.Label(label="Remind me after (in mins):  ")
+        low_time_label.set_xalign(0.1)
+        low_timebox.pack_start(low_time_label, False, False, 0)
+        self.low_time_input = Gtk.Entry()
+        self.low_time_input.set_text("60")
+        self.low_time_input.set_width_chars(4)
+        low_timebox.pack_start(self.low_time_input, False, False, 0)
+        settings_box.pack_start(low_timebox, False, False, 0)
+
+        high_timebox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, margin=5)
+        high_timebox.set_margin_start(15)
+        high_time_label  = Gtk.Label(label="Session timeout after (in mins): ")
+        high_time_label.set_xalign(0.1)
+        high_timebox.pack_start(high_time_label, False, False, 0)
+        self.high_time_input = Gtk.Entry()
+        self.high_time_input.set_text("120")
+        self.high_time_input.set_width_chars(4)
+        high_timebox.pack_start(self.high_time_input, False, False, 0)
+        settings_box.pack_start(high_timebox, False, False, 0)
+
+        separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        settings_box.pack_start(separator, False, True, 0)
+
+        activity_section_label = Gtk.Label()
+        activity_section_label.set_markup('<b>Activity</b>')
+        activity_section_label.set_xalign(0.1)
+        settings_box.pack_start(activity_section_label, False, False, 0)
+        activity_checkbox = Gtk.CheckButton(label="Show my last activity")
+        activity_checkbox.set_margin_start(15)
+        activity_checkbox.set_active(False)  # Default state
+        activity_checkbox.connect("toggled", self.on_notif)
+        settings_box.pack_start(activity_checkbox, False, False, 0)
+
+
+
+    def on_notif(self, checkbox):
+        state = checkbox.get_active()
+        if(state):
+            Notify.init("DailyTracker")
+
+    def on_last_activity(self, checkbox):
+        state = checkbox.get_active()
+            
 
 win = DailyTracker()
 icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
