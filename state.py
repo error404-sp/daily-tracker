@@ -54,7 +54,7 @@ class StateManager:
 
     def update_description(self, value):
         self.session_description = value
-    
+
     def reset(self):
         self.focus_seconds = 0
         self.session_count = 0

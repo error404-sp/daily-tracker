@@ -139,6 +139,9 @@ class DailyTracker(Gtk.Window):
                 self.switch1.set_active(self.state.is_focus_time)
                 self.log_day_start(self.start_time) 
             self.state.start_session()
+            # check if notif enabled
+            if self.notif_checkbox.get_active():
+                GLib.timeout_add(self.settings.reminder_time * 60000, self.notify)
         else:
             date = datetime.now().strftime("%d %b %Y")
             self.state.end_session(date)
@@ -146,7 +149,11 @@ class DailyTracker(Gtk.Window):
             self.prev_date_label.set_markup(f"<span size='8000'><b>Last session on:</b> {self.state.last_session}</span>")
             self.log_session(self.start_time, datetime.now(), self.state.session_seconds)
             
-                
+    def notify(self):
+        notification = Notify.Notification.new(f"You've been focused for {self.settings.reminder_time} mins.\n Time for a break?")
+        notification.set_timeout(3000)
+        notification.show()
+    
     def on_focus_activate(self, switch, gparam):
         if switch.get_active():
             self.state.reset()
@@ -171,6 +178,7 @@ class DailyTracker(Gtk.Window):
         if(self.state.timer_running):
             self.state.update_focus_time()
             self.update_time_labels(self.state.focus_seconds)
+
 
         return True  # Keep the timer going
 
@@ -236,11 +244,11 @@ class DailyTracker(Gtk.Window):
         section_label.set_xalign(0.1)
         settings_box.pack_start(section_label, False, False, 0)
         
-        notif_checkbox = Gtk.CheckButton(label="Enable notifications")
-        notif_checkbox.set_margin_start(15)
-        notif_checkbox.set_active(False)  # Default state
-        notif_checkbox.connect("toggled", self.on_notif)
-        settings_box.pack_start(notif_checkbox, False, False, 0)
+        self.notif_checkbox = Gtk.CheckButton(label="Enable notifications")
+        self.notif_checkbox.set_margin_start(15)
+        self.notif_checkbox.set_active(self.settings.enable_notif)  # Default state
+        self.notif_checkbox.connect("toggled", self.on_notif)
+        settings_box.pack_start(self.notif_checkbox, False, False, 0)
 
         low_timebox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         low_timebox.set_margin_start(15)
@@ -248,8 +256,9 @@ class DailyTracker(Gtk.Window):
         low_time_label.set_xalign(0.1)
         low_timebox.pack_start(low_time_label, False, False, 0)
         self.low_time_input = Gtk.Entry()
-        self.low_time_input.set_text("60")
+        self.low_time_input.set_text(f"{self.settings.reminder_time}")
         self.low_time_input.set_width_chars(4)
+        self.low_time_input.connect("changed", self.on_remind_change)
         low_timebox.pack_start(self.low_time_input, False, False, 0)
         settings_box.pack_start(low_timebox, False, False, 0)
 
@@ -259,7 +268,8 @@ class DailyTracker(Gtk.Window):
         high_time_label.set_xalign(0.1)
         high_timebox.pack_start(high_time_label, False, False, 0)
         self.high_time_input = Gtk.Entry()
-        self.high_time_input.set_text("120")
+        self.high_time_input.set_text(f"{self.settings.session_timeout}")
+        self.high_time_input.connect("changed", self.on_timeout_change)
         self.high_time_input.set_width_chars(4)
         high_timebox.pack_start(self.high_time_input, False, False, 0)
         settings_box.pack_start(high_timebox, False, False, 0)
@@ -273,20 +283,31 @@ class DailyTracker(Gtk.Window):
         settings_box.pack_start(activity_section_label, False, False, 0)
         activity_checkbox = Gtk.CheckButton(label="Show my last activity")
         activity_checkbox.set_margin_start(15)
-        activity_checkbox.set_active(False)  # Default state
-        activity_checkbox.connect("toggled", self.on_notif)
+        activity_checkbox.set_active(self.settings.show_activity)  # Default state
+        activity_checkbox.connect("toggled", self.on_last_activity)
         settings_box.pack_start(activity_checkbox, False, False, 0)
 
 
 
     def on_notif(self, checkbox):
         state = checkbox.get_active()
+        self.settings.update_notif(state)
         if(state):
             Notify.init("DailyTracker")
 
     def on_last_activity(self, checkbox):
         state = checkbox.get_active()
-            
+        self.settings.update_activity(state)
+
+    def on_remind_change(self, text):
+        val = text.get_text().strip()
+        updated_input = int(val) if val.isdigit() else 0
+        self.settings.update_remindtime(updated_input)
+
+    def on_timeout_change(self, text):
+        val = text.get_text().strip()
+        updated_input = int(val) if val.isdigit() else 0
+        self.settings.update_timeout(updated_input);     
 
 win = DailyTracker()
 icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
