@@ -17,6 +17,8 @@ class DailyTracker(Gtk.Window):
         super().__init__(title=f"{self.settings.username}'s Daily Tracker")
         self.csv_file = f"{self.settings.username.lower()}_focus_sessions.csv"
         self.set_default_size(400, 170)
+        if self.settings.enable_notif:
+             Notify.init("DailyTracker")
 
         # Create main vertical layout
         layoutbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -85,11 +87,14 @@ class DailyTracker(Gtk.Window):
         hbox.pack_start(description_btn, False, False, 0)
 
         vbox.pack_start(hbox, False, False, 0)
-        if(len(self.state.last_session)):
-            self.prev_date_label = Gtk.Label()
+
+        self.prev_date_label = Gtk.Label()
+        if(self.settings.show_activity):
             self.prev_date_label.set_markup(f"<span size='8000'><b>Last session on:</b> {self.state.last_session}</span>")
-            self.prev_date_label.set_xalign(1.0)
-            vbox.pack_start(self.prev_date_label, False, False, 0)
+        else:
+            self.prev_date_label.set_markup("")
+        self.prev_date_label.set_xalign(1.0)
+        vbox.pack_start(self.prev_date_label, False, False, 0)
 
         action_bar = Gtk.ActionBar()
         self.time_label = Gtk.Label(margin=10)
@@ -142,6 +147,7 @@ class DailyTracker(Gtk.Window):
             # check if notif enabled
             if self.notif_checkbox.get_active():
                 GLib.timeout_add(self.settings.reminder_time * 60000, self.notify)
+                GLib.timeout_add(self.settings.session_timeout * 60000, self.stop_sess)
         else:
             date = datetime.now().strftime("%d %b %Y")
             self.state.end_session(date)
@@ -153,6 +159,18 @@ class DailyTracker(Gtk.Window):
         notification = Notify.Notification.new(f"You've been focused for {self.settings.reminder_time} mins.\n Time for a break?")
         notification.set_timeout(3000)
         notification.show()
+    
+    def stop_sess(self):
+        self.switch.set_active(False)
+        date = datetime.now().strftime("%d %b %Y")
+        self.state.end_session(date)
+        self.session_label.set_text(f"Total sessions: {self.state.session_count}")
+        self.prev_date_label.set_markup(f"<span size='8000'><b>Last session on:</b> {self.state.last_session}</span>")
+        self.log_session(self.start_time, datetime.now(), self.state.session_seconds)
+        notification = Notify.Notification.new(f"Session ended!.\n Time for a break")
+        notification.set_timeout(3000)
+        notification.show()
+
     
     def on_focus_activate(self, switch, gparam):
         if switch.get_active():
@@ -298,6 +316,10 @@ class DailyTracker(Gtk.Window):
     def on_last_activity(self, checkbox):
         state = checkbox.get_active()
         self.settings.update_activity(state)
+        if(state):
+            self.prev_date_label.set_markup(f"<span size='8000'><b>Last session on:</b> {self.state.last_session}</span>")
+        else:
+            self.prev_date_label.set_markup("")
 
     def on_remind_change(self, text):
         val = text.get_text().strip()
