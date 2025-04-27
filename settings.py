@@ -45,6 +45,7 @@ class Settings:
     def save(self):
         with open(SETTINGS_FILE, "w") as f:
             json.dump({
+                "username": self.username,
                 "enable_notif": self.enable_notif,
                 "reminder_time": self.reminder_time,
                 "session_timeout": self.session_timeout,
