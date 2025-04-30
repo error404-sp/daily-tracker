@@ -12,6 +12,7 @@ class StateManager:
         self.session_seconds = 0
         self.session_description = ''
         self.last_session = ''
+        self.curr_session = ''
         self.load()
 
     def load(self):
@@ -43,10 +44,11 @@ class StateManager:
         self.last_session = date
         self.save()
 
-    def start_session(self):
+    def start_session(self, date):
         self.timer_running = True
         self.session_seconds = 0
         self.session_description = ""
+        self.curr_session = date
 
     def update_focus_time(self):
         self.focus_seconds += 1
