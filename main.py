@@ -90,7 +90,7 @@ class DailyTracker(Gtk.Window):
 
         self.prev_date_label = Gtk.Label()
         if(self.settings.show_activity):
-            self.prev_date_label.set_markup(f"<span size='8000'><b>Last session on:</b> {self.state.last_session}</span>")
+            self.prev_date_label.set_markup(f"<span size='8000'><b>Last session ended on:</b> {self.state.last_session}</span>")
         else:
             self.prev_date_label.set_markup("")
         self.prev_date_label.set_xalign(1.0)
@@ -138,21 +138,23 @@ class DailyTracker(Gtk.Window):
     def on_session_active(self, switch, gparam):
         if switch.get_active():
             self.start_time = datetime.now()
+            date = self.start_time.strftime("%d %b %Y , %H:%M")
             if not self.state.is_focus_time:
                 self.state.reset()
                 self.update_time_labels(self.state.focus_seconds)
                 self.switch1.set_active(self.state.is_focus_time)
                 self.log_day_start(self.start_time) 
-            self.state.start_session()
+            self.state.start_session(date)
+            self.prev_date_label.set_markup(f"<span size='8000'><b>Active since :</b> {self.state.curr_session}</span>")
             # check if notif enabled
             if self.notif_checkbox.get_active():
                 GLib.timeout_add(self.settings.reminder_time * 60000, self.notify)
                 GLib.timeout_add(self.settings.session_timeout * 60000, self.stop_sess)
         else:
-            date = datetime.now().strftime("%d %b %Y")
+            date = datetime.now().strftime("%d %b %Y , %H:%M")
             self.state.end_session(date)
             self.session_label.set_text(f"Total sessions: {self.state.session_count}")
-            self.prev_date_label.set_markup(f"<span size='8000'><b>Last session on:</b> {self.state.last_session}</span>")
+            self.prev_date_label.set_markup(f"<span size='8000'><b>Last session ended on:</b> {self.state.last_session}</span>")
             self.log_session(self.start_time, datetime.now(), self.state.session_seconds)
             
     def notify(self):
