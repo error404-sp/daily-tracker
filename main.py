@@ -125,13 +125,6 @@ class DailyTracker(Gtk.Window):
         stack.add_titled(settings_box, "settings", "Settings")
         self.get_settings_tab(settings_box)
 
-
-        # notification = Notify.Notification.new(
-        #     "Hey there!", "This is your GTK3 notification", "dialog-information"
-        # )
-        # notification.set_timeout(3000)
-        # notification.show()
-
         GLib.timeout_add_seconds(1, self.update_time)
 
 
@@ -145,6 +138,7 @@ class DailyTracker(Gtk.Window):
                 self.switch1.set_active(self.state.is_focus_time)
                 self.log_day_start(self.start_time) 
             self.state.start_session(date)
+
             self.prev_date_label.set_markup(f"<span size='8000'><b>Active since :</b> {self.state.curr_session}</span>")
             # check if notif enabled
             if self.notif_checkbox.get_active():
@@ -153,6 +147,7 @@ class DailyTracker(Gtk.Window):
         else:
             date = datetime.now().strftime("%d %b %Y , %H:%M")
             self.state.end_session(date)
+            self.on_popup()
             self.session_label.set_text(f"Total sessions: {self.state.session_count}")
             self.prev_date_label.set_markup(f"<span size='8000'><b>Last session ended on:</b> {self.state.last_session}</span>")
             self.log_session(self.start_time, datetime.now(), self.state.session_seconds)
@@ -232,7 +227,7 @@ class DailyTracker(Gtk.Window):
             writer.writerow(["---- Focus Time :",f" {def_time.hrs:02}:{def_time.mins:02}:{def_time.seconds:02}" ,"Sessions: ", f"{self.state.session_count} ----"])
             writer.writerow([])
     
-    def on_popup(self,widget):
+    def on_popup(self,widget=''):
         dialog = Gtk.Dialog(
             title="Session description",
             transient_for=self,
